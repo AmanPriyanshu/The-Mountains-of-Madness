@@ -2,6 +2,8 @@
 
 Interactive demos exploring procedural terrain generation algorithms through pure JavaScript implementations. From basic Perlin noise to advanced multifractal techniques, this project provides hands-on learning for game developers and computer graphics enthusiasts.
 
+![GIF showing example](/example.gif)
+
 🏔️ **[Live Demo](https://amanpriyanshu.github.io/The-Mountains-of-Madness/)**
 
 ## Overview
