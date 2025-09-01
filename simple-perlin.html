@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Perlin Noise - Mountains of Madness</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            position: sticky;
+            top: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #cccccc;
+            margin-bottom: 6px;
+        }
+
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .control-group input[type="number"]:focus {
+            outline: none;
+            border-color: #ffffff;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            border: 2px solid #0a0a0f;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            border: 2px solid #0a0a0f;
+        }
+
+        .range-value {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ffffff;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #ffffff;
+        }
+
+        .checkbox-group label {
+            color: #cccccc;
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ffffff;
+            border: none;
+            border-radius: 8px;
+            color: #0a0a0f;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .generate-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .render-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            height: 500px;
+            position: relative;
+        }
+
+        #terrainCanvas {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .performance-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .performance-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s ease;
+        }
+
+        .performance-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .performance-title {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .expand-icon {
+            color: #cccccc;
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .performance-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .performance-content.expanded {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .performance-body {
+            padding: 20px;
+        }
+
+        .chunk-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .chunk-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .chunk-cell:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .timing-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #999999;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls-panel {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .canvas-wrapper {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-layout">
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label>Seed</label>
+                    <input type="number" id="seed" value="12345" min="1" max="999999">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="randomSeed" checked>
+                        <label for="randomSeed">Randomize</label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Scale</label>
+                    <input type="range" id="scale" value="25" min="10" max="70" step="1">
+                    <div class="range-value" id="scaleValue">25</div>
+                </div>
+
+                <button class="generate-btn" id="generateBtn">Generate</button>
+            </div>
+
+            <div class="render-section">
+                <div class="canvas-container">
+                    <div class="canvas-wrapper">
+                        <canvas id="terrainCanvas" width="600" height="500"></canvas>
+                    </div>
+                </div>
+
+                <div class="performance-panel">
+                    <div class="performance-header" id="performanceToggle">
+                        <h4 class="performance-title">Performance Analysis</h4>
+                        <span class="expand-icon" id="expandIcon">▼</span>
+                    </div>
+                    <div class="performance-content" id="performanceContent">
+                        <div class="performance-body">
+                            <div class="chunk-grid" id="chunkGrid"></div>
+                            
+                            <div class="timing-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="genTime">0ms</div>
+                                    <div class="stat-label">Generation</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="renderTime">0ms</div>
+                                    <div class="stat-label">Rendering</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="avgChunkTime">0ms</div>
+                                    <div class="stat-label">Avg Chunk</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="totalChunks">25</div>
+                                    <div class="stat-label">Total Chunks</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Perlin Noise implementation
+        class PerlinNoise {
+            constructor(seed = 12345) {
+                this.seed = seed;
+                this.p = new Array(512);
+                this.initPermutation();
+            }
+
+            initPermutation() {
+                const random = this.seededRandom(this.seed);
+                const permutation = Array.from({length: 256}, (_, i) => i);
+                
+                // Fisher-Yates shuffle
+                for (let i = permutation.length - 1; i > 0; i--) {
+                    const j = Math.floor(random() * (i + 1));
+                    [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+                }
+                
+                // Duplicate permutation
+                for (let i = 0; i < 256; i++) {
+                    this.p[i] = this.p[256 + i] = permutation[i];
+                }
+            }
+
+            seededRandom(seed) {
+                return function() {
+                    seed = (seed * 9301 + 49297) % 233280;
+                    return seed / 233280;
+                };
+            }
+
+            fade(t) {
+                return t * t * t * (t * (t * 6 - 15) + 10);
+            }
+
+            lerp(a, b, t) {
+                return a + t * (b - a);
+            }
+
+            grad(hash, x, y) {
+                const h = hash & 15;
+                const u = h < 8 ? x : y;
+                const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+                return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+            }
+
+            noise(x, y) {
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+                
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+                
+                const u = this.fade(x);
+                const v = this.fade(y);
+                
+                const A = this.p[X] + Y;
+                const AA = this.p[A];
+                const AB = this.p[A + 1];
+                const B = this.p[X + 1] + Y;
+                const BA = this.p[B];
+                const BB = this.p[B + 1];
+                
+                return this.lerp(
+                    this.lerp(this.grad(this.p[AA], x, y), this.grad(this.p[BA], x - 1, y), u),
+                    this.lerp(this.grad(this.p[AB], x, y - 1), this.grad(this.p[BB], x - 1, y - 1), u), v
+                );
+            }
+        }
+
+        // Main terrain generator class
+        class TerrainGenerator {
+            constructor() {
+                this.canvas = document.getElementById('terrainCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.perlin = new PerlinNoise();
+                this.chunkTimes = [];
+                this.isGenerating = false;
+                
+                this.initializeChunkGrid();
+                this.bindEvents();
+            }
+
+            initializeChunkGrid() {
+                const chunkGrid = document.getElementById('chunkGrid');
+                for (let i = 0; i < 25; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'chunk-cell';
+                    cell.textContent = (i + 1).toString();
+                    chunkGrid.appendChild(cell);
+                }
+            }
+
+            bindEvents() {
+                const generateBtn = document.getElementById('generateBtn');
+                const randomSeedCheckbox = document.getElementById('randomSeed');
+                const seedInput = document.getElementById('seed');
+                const scaleInput = document.getElementById('scale');
+                const scaleValue = document.getElementById('scaleValue');
+                const performanceToggle = document.getElementById('performanceToggle');
+                
+                generateBtn.addEventListener('click', () => this.generateTerrain());
+
+                // Update scale value display and regenerate
+                scaleInput.addEventListener('input', () => {
+                    scaleValue.textContent = scaleInput.value;
+                    this.generateTerrain();
+                });
+
+                seedInput.addEventListener('input', () => {
+                    randomSeedCheckbox.checked = false;
+                    this.generateTerrain();
+                });
+
+                randomSeedCheckbox.addEventListener('change', () => this.generateTerrain());
+
+                // Performance panel toggle
+                performanceToggle.addEventListener('click', () => this.togglePerformancePanel());
+            }
+
+            togglePerformancePanel() {
+                const content = document.getElementById('performanceContent');
+                const icon = document.getElementById('expandIcon');
+                
+                const isExpanded = content.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    icon.classList.remove('expanded');
+                    icon.textContent = '▼';
+                } else {
+                    content.classList.add('expanded');
+                    icon.classList.add('expanded');
+                    icon.textContent = '▲';
+                }
+            }
+
+            generateTerrain() {
+                if (this.isGenerating) return;
+                
+                this.isGenerating = true;
+                const startTime = performance.now();
+                
+                // Handle random seed
+                const randomSeedCheckbox = document.getElementById('randomSeed');
+                const seedInput = document.getElementById('seed');
+                
+                if (randomSeedCheckbox.checked) {
+                    const randomSeed = Math.floor(Math.random() * 999999) + 1;
+                    seedInput.value = randomSeed;
+                }
+                
+                // Get parameters
+                const seed = parseInt(seedInput.value);
+                const scale = parseFloat(document.getElementById('scale').value);
+                const amplitude = 80; // Fixed amplitude value
+                
+                // Initialize noise
+                this.perlin = new PerlinNoise(seed);
+                
+                // Generate heightmap in chunks
+                const resolution = 80;
+                const chunkSize = resolution / 5;
+                const heightmap = this.createEmptyHeightmap(resolution);
+                
+                this.chunkTimes = [];
+                
+                // Process each chunk
+                for (let chunkY = 0; chunkY < 5; chunkY++) {
+                    for (let chunkX = 0; chunkX < 5; chunkX++) {
+                        const chunkStartTime = performance.now();
+                        
+                        this.generateChunk(
+                            heightmap,
+                            chunkX * chunkSize,
+                            chunkY * chunkSize,
+                            chunkSize,
+                            scale,
+                            amplitude,
+                            resolution
+                        );
+                        
+                        const chunkEndTime = performance.now();
+                        this.chunkTimes.push(chunkEndTime - chunkStartTime);
+                    }
+                }
+                
+                const genEndTime = performance.now();
+                
+                // Render 3D terrain
+                this.render3D(heightmap, resolution);
+                
+                const renderEndTime = performance.now();
+                
+                // Update performance display
+                this.updatePerformanceDisplay(genEndTime - startTime, renderEndTime - genEndTime);
+                
+                this.isGenerating = false;
+            }
+
+            createEmptyHeightmap(resolution) {
+                const heightmap = [];
+                for (let y = 0; y < resolution; y++) {
+                    heightmap[y] = new Array(resolution).fill(0);
+                }
+                return heightmap;
+            }
+
+            generateChunk(heightmap, startX, startY, chunkSize, scale, amplitude, resolution) {
+                for (let localX = 0; localX < chunkSize && startX + localX < resolution; localX++) {
+                    for (let localY = 0; localY < chunkSize && startY + localY < resolution; localY++) {
+                        const x = startX + localX;
+                        const y = startY + localY;
+                        const noiseValue = this.perlin.noise(x / scale, y / scale);
+                        heightmap[y][x] = (noiseValue + 1) * 0.5 * amplitude;
+                    }
+                }
+            }
+
+            render3D(heightmap, resolution) {
+                // Clear canvas
+                this.ctx.fillStyle = '#0a0a0f';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Calculate bounds for auto-scaling
+                const maxHeight = Math.max(...heightmap.flat());
+                const minHeight = Math.min(...heightmap.flat());
+                
+                // Get canvas dimensions
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+                
+                // Calculate optimal scale
+                const margin = 0.9;
+                const scale = Math.min(canvasWidth, canvasHeight) * margin / (resolution * 1.2);
+                
+                // Center position
+                const centerX = canvasWidth / 2;
+                const centerY = canvasHeight / 2 + 30;
+                
+                this.ctx.save();
+                this.ctx.translate(centerX, centerY);
+                
+                const isoScale = 0.8;
+                const heightScale = 0.4;
+                
+                // Render terrain faces (back to front)
+                for (let y = resolution - 2; y >= 0; y--) {
+                    for (let x = 0; x < resolution - 1; x++) {
+                        const h1 = heightmap[y][x];
+                        const h2 = heightmap[y][x + 1];
+                        const h3 = heightmap[y + 1][x];
+                        const h4 = heightmap[y + 1][x + 1];
+                        
+                        // Convert to isometric coordinates
+                        const p1 = this.toIsometric(x, y, h1, scale, isoScale, heightScale);
+                        const p2 = this.toIsometric(x + 1, y, h2, scale, isoScale, heightScale);
+                        const p3 = this.toIsometric(x, y + 1, h3, scale, isoScale, heightScale);
+                        const p4 = this.toIsometric(x + 1, y + 1, h4, scale, isoScale, heightScale);
+                        
+                        // Calculate grayscale color based on height
+                        const avgHeight = (h1 + h2 + h3 + h4) / 4;
+                        const normalizedHeight = (avgHeight - minHeight) / (maxHeight - minHeight || 1);
+                        const grayValue = Math.floor(30 + normalizedHeight * 180);
+                        
+                        // Fill quad
+                        this.ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(p1.x, p1.y);
+                        this.ctx.lineTo(p2.x, p2.y);
+                        this.ctx.lineTo(p4.x, p4.y);
+                        this.ctx.lineTo(p3.x, p3.y);
+                        this.ctx.closePath();
+                        this.ctx.fill();
+                        
+                        // Wireframe
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                        this.ctx.lineWidth = 0.3;
+                        this.ctx.stroke();
+                    }
+                }
+                
+                // Enhanced wireframe lines
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                this.ctx.lineWidth = 0.5;
+                
+                const lineSpacing = Math.max(2, Math.floor(resolution / 20));
+                
+                // Horizontal lines
+                for (let y = 0; y < resolution; y += lineSpacing) {
+                    this.ctx.beginPath();
+                    for (let x = 0; x < resolution; x++) {
+                        const h = heightmap[y][x];
+                        const p = this.toIsometric(x, y, h, scale, isoScale, heightScale);
+                        if (x === 0) {
+                            this.ctx.moveTo(p.x, p.y);
+                        } else {
+                            this.ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                    this.ctx.stroke();
+                }
+                
+                // Vertical lines
+                for (let x = 0; x < resolution; x += lineSpacing) {
+                    this.ctx.beginPath();
+                    for (let y = 0; y < resolution; y++) {
+                        const h = heightmap[y][x];
+                        const p = this.toIsometric(x, y, h, scale, isoScale, heightScale);
+                        if (y === 0) {
+                            this.ctx.moveTo(p.x, p.y);
+                        } else {
+                            this.ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.restore();
+            }
+
+            toIsometric(x, y, z, scale, isoScale, heightScale) {
+                // Center coordinates
+                const centerOffset = 40;
+                x -= centerOffset;
+                y -= centerOffset;
+                
+                // Isometric projection
+                const isoX = (x - y) * Math.cos(Math.PI / 6) * scale * isoScale;
+                const isoY = (x + y) * Math.sin(Math.PI / 6) * scale * isoScale - z * heightScale * scale;
+                
+                return { x: isoX, y: isoY };
+            }
+
+            updatePerformanceDisplay(genTime, renderTime) {
+                // Update timing displays
+                document.getElementById('genTime').textContent = genTime.toFixed(1) + 'ms';
+                document.getElementById('renderTime').textContent = renderTime.toFixed(1) + 'ms';
+                
+                // Calculate and display average chunk time
+                const avgTime = this.chunkTimes.reduce((sum, time) => sum + time, 0) / this.chunkTimes.length;
+                document.getElementById('avgChunkTime').textContent = avgTime.toFixed(1) + 'ms';
+                
+                // Update chunk grid with performance data
+                const chunkCells = document.querySelectorAll('.chunk-cell');
+                const minTime = Math.min(...this.chunkTimes);
+                const maxTime = Math.max(...this.chunkTimes);
+                
+                this.chunkTimes.forEach((time, index) => {
+                    const cell = chunkCells[index];
+                    if (cell) {
+                        cell.textContent = time.toFixed(1);
+                        cell.title = `Chunk ${index + 1}: ${time.toFixed(2)}ms`;
+                        
+                        // Grayscale performance coloring (darker = faster)
+                        const normalized = maxTime > minTime ? (time - minTime) / (maxTime - minTime) : 0;
+                        const grayValue = Math.floor(80 + normalized * 120);
+                        cell.style.backgroundColor = `rgba(${grayValue}, ${grayValue}, ${grayValue}, 0.3)`;
+                        cell.style.borderColor = `rgba(${grayValue}, ${grayValue}, ${grayValue}, 0.5)`;
+                    }
+                });
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const generator = new TerrainGenerator();
+            generator.generateTerrain();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mountains of Madness - Interactive Terrain Generation Algorithms</title>
+
+    <!-- Basic Meta Tags -->
+    <meta name="description" content="Interactive demos of procedural terrain generation using Perlin noise, fractals, domain warping, ridged multifractals, and exponential slope weighting. Educational exploration of game development and computer graphics algorithms with pure JavaScript implementations.">
+    <meta name="keywords" content="procedural-generation, terrain-generation, perlin-noise, domain-warping, ridged-multifractal, fractal-noise, game-development, computer-graphics, interactive-visualization, generative-art, noise-functions, procedural-terrain, terrain-modeling, js-game, creative-coding">
+    <meta name="author" content="Aman Priyanshu">
+
+    <!-- Open Graph Meta Tags (for Facebook, LinkedIn) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://amanpriyanshu.github.io/The-Mountains-of-Madness/">
+    <meta property="og:title" content="The Mountains of Madness - Interactive Terrain Generation">
+    <meta property="og:description" content="Learn procedural terrain generation through interactive JavaScript demos. Explore Perlin noise, fractals, domain warping, and advanced techniques with real-time parameter control and performance analysis.">
+    <meta property="og:image" content="https://amanpriyanshu.github.io/The-Mountains-of-Madness/example.gif">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Favicon -->
+    <link rel="icon" href="example.gif" type="image/gif">
+    <link rel="shortcut icon" href="example.gif" type="image/gif">
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:creator" content="@AmanPriyanshu6">
+    <meta name="twitter:site" content="@AmanPriyanshu6">
+    <meta name="twitter:title" content="Interactive Terrain Generation - Mountains of Madness">
+    <meta name="twitter:description" content="Interactive demos teaching procedural terrain generation with Perlin noise, domain warping, ridged multifractals, and more. Real-time parameter control with performance analysis.">
+    <meta name="twitter:image" content="https://amanpriyanshu.github.io/The-Mountains-of-Madness/example.gif">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #999999;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .story-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 50px;
+        }
+
+        .story-title {
+            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .story-text {
+            color: #cccccc;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        .story-text.highlight {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .problem-section {
+            background: rgba(255, 100, 100, 0.1);
+            border: 1px solid rgba(255, 100, 100, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .problem-title {
+            color: #ff6b6b;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .solution-section {
+            background: rgba(100, 255, 100, 0.1);
+            border: 1px solid rgba(100, 255, 100, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .solution-title {
+            color: #6bcf7f;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .requirement-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .requirement-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .requirement-title {
+            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .requirement-description {
+            color: #bbbbbb;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .algorithm-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .algorithm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .algorithm-title {
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .algorithm-status {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .algorithm-description {
+            color: #bbbbbb;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .demo-container {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .demo-iframe {
+            width: 100%;
+            height: 700px;
+            border: none;
+            background: transparent;
+        }
+
+        .algorithm-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .detail-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .detail-title {
+            color: #ffffff;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .detail-text {
+            color: #cccccc;
+            font-size: 0.95rem;
+        }
+
+        .formula-section {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .formula-title {
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .formula {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #ffffff;
+            text-align: center;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .formula-explanation {
+            color: #bbbbbb;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .coming-soon-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .coming-soon-title {
+            color: #ffffff;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .coming-soon-text {
+            color: #999999;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .algorithm-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .preview-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .preview-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .preview-title {
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .preview-description {
+            color: #bbbbbb;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .preview-status {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666666;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 60px;
+        }
+
+        .footer a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .epigraph {
+            text-align: center;
+            font-style: italic;
+            font-size: 1.2rem;
+            color: #bbbbbb;
+            margin: 50px auto;
+            max-width: 800px;
+            line-height: 1.6;
+            opacity: 0.85;
+            border-left: 3px solid rgba(255,255,255,0.15);
+            padding-left: 15px;
+        }
+        .epigraph cite {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #888888;
+            font-style: normal;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .algorithm-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .demo-iframe {
+                height: 600px;
+            }
+            
+            .algorithm-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Mountains of Madness: I wanted hills… got cosmic dread instead</h1>
+            <p class="subtitle">
+                When noise becomes mountains and functions become fields
+            </p>
+        </div>
+
+        <div class="story-section">
+            <h2 class="story-title">Why Mountains Matter</h2>
+
+            <blockquote class="epigraph">
+                “I could not help feeling that they were evil things - mountains of madness whose farther slopes looked out over some accursed ultimate abyss.”  
+                <cite>— H. P. Lovecraft, <em>At the Mountains of Madness</em></cite>
+            </blockquote>
+                       
+            
+            <p class="story-text">
+                If I had to be honest with myself, one of my greatest fears is heights, and yet some of my best moments have been while hiking. It's a strangely weird feeling, fearing the very place where I'm standing while also being happy that I made it there. I know this has nothing to do with the project being called The Mountains of Madness. Honestly, I just named it that because it sounded cool, and I've been reading some Lovecraft short stories recently.
+            </p>
+            
+            <div style="text-align:center; margin: 30px 0;">
+                <img src="real_world.jpg" alt="Real World Mountains" style="max-width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+            </div>
+            
+            <p class="story-text">   
+                Getting back to mountains and what this project is: recently, on my highly invasive YouTube front page, I guess the algorithm picked up on my profession and started recommending me some odd algorithmic videos. One of them was <a href="https://www.youtube.com/watch?v=gsJHzBTPG0Y" target="_blank">"Better Mountain Generators That Aren't Perlin Noise or Erosion"</a> by <a href="https://www.youtube.com/@JoshsHandle" target="_blank">Josh's Channel</a>. It broke down a few alternatives to the usual noise and erosion methods and showed tricks like using gradients to smooth slopes or branching processes to make ridges.
+            </p>
+
+            <p class="story-text">
+                While I didn't try to copy everything from the video, I did experiment with a bunch of new algorithms specialized for resource-constrained generation. All in all, the video stuck with me. The idea that we could get closer to natural-looking mountains with small changes to noise functions, without relying on heavy erosion simulations, made sense. That's what pushed me to sit down and start building. Thanks in large part to <a href="https://www.youtube.com/@JoshsHandle" target="_blank">Josh's Channel</a> for the spark, and also to the image above, which served as its own kind of inspiration.
+            </p>
+
+            <div class="problem-section">
+                <h3 class="problem-title">The Random Noise Problem</h3>
+                <p class="story-text">
+                    To start things off, plain random noise makes terrain look flat and fake. Basic Perlin noise, a popular method for terrain generation, mostly gives smooth hills that tend to repeat too much. Real mountains are shaped by time, weather, and the ground shifting, which leaves ridges, valleys, and channels. Noise on its own does not capture those patterns, so the result never feels like a real landscape.
+                </p>
+                <p class="story-text">
+                    On top of that, the simple ways of generating terrain don't hold up for modern games. Open worlds need huge amounts of land with detail that keeps streaming in as we move. It has to run smoothly on different hardware and also allow the world to change while we play. Precomputed terrain can't really keep up with those demands and may be too expensive.
+                </p>
+            </div>
+
+            <p class="story-text highlight">
+                This project tries out math that I feel brings us closer to real landscapes, while still keeping things light enough to run in real time.
+            </p>
+
+            <div class="solution-section">
+                <h3 class="solution-title">Scope Setting for this Project: What's considered Optimal?</h3>
+                <div class="requirements-grid">
+                    <div class="requirement-card">
+                        <h4 class="requirement-title">Chunked Generation</h4>
+                        <p class="requirement-description">
+                            The terrain should come in chunks that can load and unload as we move around. Each piece needs to line up cleanly with the next and still hold enough detail to feel consistent.
+                        </p>
+                    </div>
+                    <div class="requirement-card">
+                        <h4 class="requirement-title">Parallel-Friendly</h4>
+                        <p class="requirement-description">
+                            The code should run well across many cores or GPU threads as available. If chunks can be processed on their own, it makes things faster and easier to stream while the world keeps going.
+                        </p>
+                    </div>
+                    <div class="requirement-card">
+                        <h4 class="requirement-title">GPU-Friendly</h4>
+                        <p class="requirement-description">
+                            The math should fit how GPUs like to work. That means fewer branches, cleaner memory use, and support for shaders that can push through lots of points at once.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="story-text">
+                The methods here move from plain noise toward more involved ways of shaping terrain. Each one fixes a weakness in the simpler approaches, but none of them are perfect. They're just steps toward terrain that feels more like real mountains while still running fast enough for interactive use.
+            </p>
+        </div>
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Basic Perlin Noise</h2>
+            </div>
+        
+            <p class="algorithm-description">
+                So we know what random noise looks like: static on a TV or rather pixels where every value jumps with no relation to its neighbors. 
+                That kind of noise is too harsh for terrain, since it has no continuity. Perlin noise is different because it comes from a smooth mathematical function. Instead of giving each point an unrelated random number, it blends contributions from gradients at nearby grid corners, which makes the values change gradually as we move across space.
+            </p>
+        
+            <div class="demo-container">
+                <iframe src="simple-perlin.html" class="demo-iframe" title="Basic Perlin Noise Demo"></iframe>
+            </div>
+        
+            <div class="formula-section">
+                <h3 class="formula-title">Core Equation</h3>
+                <div class="formula">
+                    height(x, y) = noise(x / scale, y / scale) × amplitude
+                </div>
+                <p class="formula-explanation">
+                    This is the exact form used here. The inputs <code>(x, y)</code> are scaled to set the feature size: 
+                    a larger scale stretches the function and produces broad hills, 
+                    while a smaller scale compresses it and adds fine detail. 
+                    The result is multiplied by <code>amplitude</code> to decide how tall or shallow the terrain will be.
+                </p>
+            </div>
+        
+            <p class="algorithm-description">
+                Internally, the noise function still relies on gradients, a fade curve 
+                <code>f(t) = 6t<sup>5</sup> - 15t<sup>4</sup> + 10t<sup>3</sup></code>, 
+                and interpolation to keep everything smooth at cell boundaries. 
+                But for our purposes, what matters is that the function gives continuous values, and that continuity is what turns pure randomness into rolling hills.
+            </p>
+        </div>              
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Additive Perlin Noise</h2>
+            </div>
+            
+            <p class="algorithm-description">
+                So basic Perlin noise gives us smooth hills, but they're a bit boring, like someone took a real mountain and ran it through a heavy blur filter. The problem is that real terrain has complexity at multiple scales simultaneously. We've got massive mountain ranges, medium-sized ridges cutting across them, and tiny surface details all working together. Single-octave Perlin noise, which is what we just saw above, can essentially only capture one level of detail at a time.
+            </p>
+        
+            <p class="algorithm-description">
+                Additive Perlin noise, however, fixes this by layering multiple noise functions on top of each other, each operating at a different scale. Think of it like making a lasagna. We've got the big pasta sheets as our base structure, then layers of sauce and cheese filling different gaps, and finally those little herb flakes on top. Each "octave" of noise contributes a different scale of terrain detail the same way. I know hearing "octave" probably makes you think of musical frequencies, which would be the obvious analogy, but lasagna is how this actually makes sense to me when I'm staring at this code.
+
+                <div style="text-align:center; margin: 30px 0;">
+                    <img src="smelling-the-lasagna-garfield.gif" alt="Garfield smelling lasagna" style="max-width:20%; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+                </div>
+            </p>
+            
+            <div class="demo-container">
+                <iframe src="additive-perlin.html" class="demo-iframe" title="Additive Perlin Noise Demo"></iframe>
+            </div>
+            
+            <div class="formula-section">
+                <h3 class="formula-title">Fractal Summation</h3>
+                <div class="formula">height = Σ(noise(x/scale_i, y/scale_i) × amplitude_i)</div>
+                <p class="formula-explanation">
+                    Each octave samples noise at a different scale and weights it by amplitude. The magic happens when we add them all together, and suddenly we get terrain that looks natural instead of artificially smooth.
+                </p>
+            </div>
+            
+            <p class="algorithm-description">
+                The math behind this follows a simple pattern that shows up everywhere in nature. Each successive octave typically has half the scale (double the frequency) and half the amplitude of the previous one. So if our first octave creates broad mountain ranges at scale 50, the second octave adds ridge details at scale 25, the third adds surface variations at scale 12.5, and so on. This creates what mathematicians call a 1/f noise spectrum. Here's where it gets interesting from an implementation perspective. I normalize all the amplitude weights so the total doesn't blow past our intended height range. Without this, adding more octaves would make our mountains taller and taller, which breaks the whole point of having predictable terrain bounds.
+            </p>
+        
+            <p class="algorithm-description">
+                The performance cost, here, kinda scales linearly with octave count, which becomes obvious when we look at the chunk timing data. One could sample parallely since they're independent but well... I didn't do that here 🙂. Each additional octave requires a full pass through the noise function for every single terrain point. In practice, I don't know what most games settle on cause my primary profession is as a <a href="https://amanpriyanshu.github.io" target="_blank">matrix-multiplication researcher</a>, but I settled on 3-6 octaves as the sweet spot between visual quality and frame rates. We can push higher if we're generating terrain offline, but for real-time generation, we hit diminishing returns pretty quickly.
+            </p>
+        
+            <p class="algorithm-description">
+                What I find compelling about this approach is how it mirrors the way natural processes actually work. Geological forces operate at multiple time and space scales simultaneously like tectonic uplift creates the big structures and erosion kind of carves the smaller details. Weather and water definitely play a role in this erosion. While, additive noise doesn't simulate these processes directly, it better captures their visual signature in a way that our pattern-recognition systems immediately recognize as "more" natural looking.
+            </p>
+        </div>
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Multiplicative Perlin Noise</h2>
+            </div>
+            
+            <p class="algorithm-description">
+                So additive noise is nice and all, but it gives us these sharp, ragged, but still uniformly noisy landscapes that look a bit too... unnatural still? Real terrain has varied cuts, at times taller peaks, where water carved through rock over millions of years. Multiplicative noise tackles this by completely flipping the script, instead of adding layers together, we multiply them. This creates a masking effect where any layer that goes low basically kills the height in that area.
+            </p>
+            
+            <div class="demo-container">
+                <iframe src="multiplicative-perlin.html" class="demo-iframe" title="Multiplicative Perlin Noise Demo"></iframe>
+            </div>
+            
+            <div class="formula-section">
+                <h3 class="formula-title">Multiplicative Masking</h3>
+                <div class="formula">height = ∏(normalize(noise(x/scale_i, y/scale_i))^contrast)</div>
+                <p class="formula-explanation">
+                    Each noise layer gets normalized to [0,1] range, then raised to a contrast power before multiplication. 
+                    Low values in any layer dramatically suppress the final result, creating natural smoothening patterns.
+                </p>
+            </div>
+            
+            <p class="algorithm-description">
+                Here's where the math gets brutal. When we multiply numbers between 0 and 1, the result is always smaller than the original values. So if one layer gives us 0.3 and another gives us 0.7, we get 0.21, a value much lower than either input. This means any area where ANY layer goes low will be carved out of our terrain. It's like having multiple erosion processes all competing to destroy our generated mountains.
+            </p>
+        
+            <p class="algorithm-description">
+                The contrast parameter is where one can really mess with the effect. Values below 0.5 get pushed even lower when we raise them to powers greater than 1.0, while values above 0.5 stay relatively strong. This creates those varied boundaries between "terrain survives here" and "terrain gets obliterated." Without the contrast adjustment, the multiplication would just make everything uniformly dim.
+            </p>
+        
+            <p class="algorithm-description">
+                Performance wise, it's about the same cost as additive noise, since we're still doing the same number of noise samples, just multiplying instead of adding at the end. But the visual impact is way more dramatic per layer. Where one might need 6 octaves of additive noise to get interesting terrain, 3-4 multiplicative layers can create these cool canyon systems that look like they've been carved by actual geological processes.
+            </p>
+        
+            <p class="algorithm-description">
+                What's weird about this technique is how it kind of mimics real erosion patterns. Water doesn't uniformly lower everything, it finds the weak spots and carves deep channels while leaving resistant areas untouched. Multiplicative noise does something similar by finding where multiple noise layers happen to be low simultaneously and creating dramatic cuts there. It's not physically accurate, but it may hit the similar visual notes.
+            </p>
+        </div>
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Domain Warping</h2>
+            </div>
+            
+            <p class="algorithm-description">
+                So all the noise techniques we've looked at so far sample from a regular grid, that is, we ask for the height at position (x, y) and get back some value. Domain warping throws that out the window by messing with the coordinates themselves before we even ask for the height. Instead of sampling at (x, y), we sample at some twisted, distorted version of those coordinates.
+            </p>
+        
+            <p class="algorithm-description">
+                Think of it like trying to read a map that someone crumpled up and then smoothed back out. All the information is still there, but now everything's in slightly the wrong place, creating these organic flowing patterns that would never show up on a perfect grid.
+            </p>
+            
+            <div class="demo-container">
+                <iframe src="domain-warping.html" class="demo-iframe" title="Domain Warping Demo"></iframe>
+            </div>
+            
+            <div class="formula-section">
+                <h3 class="formula-title">Coordinate Transformation</h3>
+                <div class="formula">warp_x = Σ perlin(x×2ⁱ/warpScale, y×2ⁱ/warpScale, seed+1000) × (1/2ⁱ)<br>
+                warp_y = Σ perlin(x×2ⁱ/warpScale, y×2ⁱ/warpScale, seed+2000) × (1/2ⁱ)<br>
+                <br>
+                warped_x = x + warp_x × warpStrength<br>
+                warped_y = y + warp_y × warpStrength<br>
+                <br>
+                height = Σ perlin(warped_x×2ⁱ/baseScale, warped_y×2ⁱ/baseScale, seed) × (1/2ⁱ)<br>
+                <br>
+                </div>
+                <p class="formula-explanation">
+                    Two separate fractal noise functions generate coordinate offsets, then the main terrain noise is sampled at those warped coordinates.
+                </p>
+            </div>
+            
+            <p class="algorithm-description">
+                Here's where this gets expensive. We're now running three noise functions for every single terrain point, two for the coordinate warping plus one for the actual terrain height. If we want fractal detail in our warping (which we usually do), we might be looking at 6+ noise evaluations per point. Also, in a way sequential sampling since height needs both warped_x and warped_y to infer. That could easily be 10x more expensive than basic Perlin noise, which explains why we don't see this everywhere despite how good it looks. Even so, warped_x and warped_y can be parallelized and may lead to better speeds.
+            </p>
+        
+            <p class="algorithm-description">
+                Now, the warp strength parameter controls how dramatically we bend the coordinate space. Low values give us subtle flowing variations that just add some organic character. High values can create these wild twisted landscapes that look like they were carved by some alien geological process. Warp scale is the other key parameter, it controls how frequently the distortion changes across space. Large scales create broad, sweeping deformations that feel like continents. Small scales add fine chaotic perturbations that could look like detailed erosion patterns.
+            </p>
+        
+            <p class="algorithm-description">
+                What's fascinating about domain warping is how it accidentally captures something fundamental about real terrain formation. Geological processes don't operate on perfect grids, they follow complex flow patterns that create these organic looking, intertwining structures. Domain warping doesn't simulate any of that physics, but it produces visual results that hit similar notes.
+            </p>
+        </div>
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Exponential Slope Weighting</h2>
+            </div>
+            
+            <p class="algorithm-description">
+                So far we've been generating terrain that looks natural, but there's a problem, it's often too steep for practical use. Real mountains might have dramatic cliffs, but if we're talking about a game world where players need to actually walk around, we can't really have knife-edge ridges everywhere. Exponential slope weighting is a post-processing step that takes our generated terrain and selectively smooths out the steep parts while leaving gentler areas mostly alone. It works on the basis of gradients 🎉!!
+            </p>
+            
+            <div class="demo-container">
+                <iframe src="exponential-weighting.html" class="demo-iframe" title="Exponential Slope Weighting Demo"></iframe>
+            </div>
+            
+            <div class="formula-section">
+                <h3 class="formula-title">Slope-Based Height Reduction</h3>
+                <div class="formula">s(x,y) = √((∂h/∂x)² + (∂h/∂y)²)<br>
+                h'(x,y) = h(x,y) × e^(-α×s(x,y))</div>
+                <p class="formula-explanation">
+                    First calculate the slope steepness using gradients, then apply exponential decay based on that steepness. The α parameter controls how aggressively steep areas get flattened.
+                </p>
+            </div>
+            
+            <p class="algorithm-description">
+                The implementation is pretty straightforward. We generate our base terrain using whatever method we want, that is, fractal noise, domain warping, whatever (here, its basic additive). Then we go back over every point and calculate how steep the terrain is at that location using the gradient. Now, instead of just subtracting a fixed amount from steep areas, it multiplies the height by e^(-α×slope). This means gentle slopes barely get affected, but as the slope gets steeper, the reduction becomes more and more dramatic. The α parameter lets us control how sensitive this process is: low values like 0.05 created smooth rolling hills, while high values like 0.5 create these jagged hills. What I like about this approach is that it maintains the overall shape of our terrain while fixing the practical problems. Mountain peaks stay where they are, valley systems remain intact, but those razor-sharp ridges get softened.
+            </p>
+        </div>
+
+        <div class="algorithm-section">
+            <div class="algorithm-header">
+                <h2 class="algorithm-title">Ridged Multifractal</h2>
+            </div>
+            
+            <p class="algorithm-description">
+                Well, till here all the previous techniques gave us terrain that's either too smooth or too uniform. What if we want to explore a different direction, specifically ridges and kinda the clustering behavior of mountains... with sharp ridges and dramatic peaks? Ridged multifractal modifies standard Perlin noise by applying an absolute-value inversion and nonlinear amplification, transforming smooth undulating hills into sharp, ridge-like structures with steep gradients and highly flattened valleys.
+            </p>
+            
+            <div class="demo-container">
+                <iframe src="ridged-multifractal.html" class="demo-iframe" title="Ridged Multifractal Demo"></iframe>
+            </div>
+            
+            <div class="formula-section">
+                <h3 class="formula-title">Ridge Transformation & Spectral Weighting</h3>
+                <div class="formula">r(x,y) = max(0, 1 - (offset - |perlin(x,y)|)²)<br>
+                weight_{i+1} = clamp(r_i × 1.5, 0, 1)^0.8<br>
+                height = Σ r_i × amplitude_i × weight_i<br>
+                <br>
+                where: frequency_i = (1/baseScale) × lacunarity^i<br>
+                amplitude_i = gain^i</div>
+                <p class="formula-explanation">
+                    The absolute value flips valleys into ridges, then each octave's influence gets weighted by how prominent the previous ridges were. High ridges get enhanced detail.
+                </p>
+            </div>
+            
+            <p class="algorithm-description">
+                The "multifractal" part is where things get really interesting. Unlike regular fractal noise where each octave just adds detail uniformly, here each octave's contribution depends on what the previous octaves created. Areas that are already high ridges get more detail added from subsequent octaves, while flat areas or valleys get less. This weighting system works by taking each octave's result, multiplying it, in our case by 1.5, clamping it between 0 and 1, then raising it to the 0.8 power. This creates a feedback loop where dramatic terrain features accumulate more and more fine detail, while "boring" areas stay relatively simple. The result is terrain that has this natural variation in complexity, similar to what we see in real mountain ranges.
+            </p>
+        
+            <p class="algorithm-description">
+                The parameters let us control the character of our mountains. Lacunarity controls how much the frequency changes between octaves. The ridge offset parameter directly controls peak sharpness, too high and we get impossible spikes, too low and everything flattens out. The gain parameter affects how much detail each octave contributes, with higher values creating more chaotic, heavily textured terrain. What I find fascinating about ridged multifractal is how it accidentally recreates the way mountain detail actually distributes in nature. The highest, most exposed ridges tend to have the most complex surface features because that's where all the geological stress concentrates. Valleys are smoother because they're filled with sediment and debris. This algorithm produces that same pattern of detail distribution without simulating any actual physics, it just emerges from the mathematical structure.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>
+                The-Mountains-of-Madness: I wanted hills… got cosmic dread instead<br>
+                by <a href="https://amanpriyanshu.github.io/" target="_blank">Aman Priyanshu</a> • 
+                <a href="https://github.com/AmanPriyanshu/The-Mountains-of-Madness" target="_blank">Source Code</a>
+            </p>
+        </div>        
+
+    </div>
+</body>
+</html>

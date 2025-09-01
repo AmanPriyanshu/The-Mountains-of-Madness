@@ -1,2 +1,2 @@
 # Mountains-of-Madness
-I wanted hills… got cosmic dread instead
+I don't why but I now like rendering mountains now
